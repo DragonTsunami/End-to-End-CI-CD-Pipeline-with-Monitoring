@@ -1,0 +1,42 @@
+groups:
+  - name: hermes-host-alerts
+    rules:
+      - alert: HostCpuHigh
+        expr: 100 - (avg by(instance) (rate(node_cpu_seconds_total{mode="idle"}[2m])) * 100) > 80
+        for: 2m
+        labels:
+          severity: warning
+          module: host
+        annotations:
+          summary: "主机 CPU 使用率过高"
+          description: "{{ $labels.instance }} CPU 使用率超过 80%"
+
+      - alert: HostMemoryHigh
+        expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 85
+        for: 2m
+        labels:
+          severity: warning
+          module: host
+        annotations:
+          summary: "主机内存使用率过高"
+          description: "{{ $labels.instance }} 内存使用率超过 85%"
+
+      - alert: HostDiskHigh
+        expr: (1 - (node_filesystem_avail_bytes{fstype!~"tmpfs|overlay|squashfs"} / node_filesystem_size_bytes{fstype!~"tmpfs|overlay|squashfs"})) * 100 > 85
+        for: 2m
+        labels:
+          severity: critical
+          module: host
+        annotations:
+          summary: "主机磁盘空间不足"
+          description: "{{ $labels.instance }} {{ $labels.mountpoint }} 磁盘使用率超过 85%"
+
+      - alert: MonitorTargetDown
+        expr: up == 0
+        for: 1m
+        labels:
+          severity: critical
+          module: monitor
+        annotations:
+          summary: "监控目标不可达"
+          description: "{{ $labels.job }} / {{ $labels.instance }} 已不可达"

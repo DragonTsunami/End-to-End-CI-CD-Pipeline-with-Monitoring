@@ -1,0 +1,55 @@
+{
+  "websites": [
+    {
+      "domain": "hermes-admin.com",
+      "status": "running",
+      "php": "8.2",
+      "root": "/www/wwwroot/hermes-admin",
+      "ssl": true
+    },
+    {
+      "domain": "api.hermes-admin.com",
+      "status": "running",
+      "php": "8.1",
+      "root": "/www/wwwroot/api",
+      "ssl": true
+    },
+    {
+      "domain": "dev.hermes-admin.com",
+      "status": "stopped",
+      "php": "8.3",
+      "root": "/www/wwwroot/dev",
+      "ssl": false
+    }
+  ],
+  "config": {
+    "dark_mode": false,
+    "auto_update": true,
+    "live_monitor": true,
+    "notifications": true,
+    "daily_backup": false,
+    "panel_port": 8100,
+    "theme": "light"
+  },
+  "activity": [
+    {
+      "icon": "fa-docker",
+      "color": "#0a84ff",
+      "text": "Docker start 容器 devops-flask-app",
+      "time": "23:53"
+    },
+    {
+      "icon": "fa-rotate",
+      "color": "#0071e3",
+      "text": "面板启动",
+      "time": "刚刚"
+    },
+    {
+      "icon": "fa-server",
+      "color": "#30d158",
+      "text": "系统服务初始化完成",
+      "time": "刚刚"
+    }
+  ],
+  "timestamp": "20260612_235406"
+}

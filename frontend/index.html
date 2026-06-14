@@ -1,0 +1,225 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Hermes Panel 企业运维平台</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-logo">H</div>
+        <div>
+          <strong>Hermes Panel</strong>
+          <span>Docker Native Ops</span>
+        </div>
+      </div>
+
+      <nav class="nav">
+        <button class="nav-item active" data-view="overview" type="button">总览</button>
+        <button class="nav-item" data-view="prometheus" type="button">Prometheus</button>
+        <button class="nav-item" data-view="hosts" type="button">主机预警</button>
+        <button class="nav-item" data-view="containers" type="button">容器监控</button>
+        <button class="nav-item" data-view="events" type="button">事件中心</button>
+      </nav>
+
+      <div class="side-card">
+        <span>采集链路</span>
+        <strong id="side-status">检测中</strong>
+        <p id="side-prometheus">Prometheus API</p>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">企业中级运维项目</p>
+          <h1 id="page-title">统一监控与事件响应中心</h1>
+        </div>
+        <div class="top-actions">
+          <span class="refresh-text" id="refresh-text">等待首次采集</span>
+          <button class="btn secondary" id="refresh-btn" type="button">刷新</button>
+          <a class="btn primary" href="http://localhost:9090" target="_blank" rel="noreferrer">Prometheus</a>
+        </div>
+      </header>
+
+      <section class="view active" id="view-overview">
+        <div class="hero">
+          <div>
+            <p>实时运维态势</p>
+            <strong id="health-score">--</strong>
+            <span id="health-copy">正在等待 Prometheus 返回真实指标</span>
+          </div>
+          <div class="hero-grid">
+            <article><span>监控目标</span><strong id="target-ratio">--</strong></article>
+            <article><span>运行容器</span><strong id="container-count">--</strong></article>
+            <article><span>活跃告警</span><strong id="alert-count">--</strong></article>
+          </div>
+        </div>
+
+        <div class="metric-grid">
+          <article class="metric-card">
+            <span>CPU 使用率</span>
+            <strong id="metric-cpu">--</strong>
+            <div class="meter"><i id="meter-cpu"></i></div>
+          </article>
+          <article class="metric-card">
+            <span>内存使用率</span>
+            <strong id="metric-memory">--</strong>
+            <div class="meter"><i id="meter-memory"></i></div>
+          </article>
+          <article class="metric-card">
+            <span>磁盘使用率</span>
+            <strong id="metric-disk">--</strong>
+            <div class="meter"><i id="meter-disk"></i></div>
+          </article>
+          <article class="metric-card">
+            <span>网络吞吐</span>
+            <strong id="metric-network">--</strong>
+            <div class="sub-value" id="metric-network-sub">Prometheus rate</div>
+          </article>
+        </div>
+
+        <div class="layout-2">
+          <section class="panel">
+            <div class="panel-head">
+              <div>
+                <p class="eyebrow">Prometheus</p>
+                <h2>实时曲线</h2>
+              </div>
+              <div class="tabs" id="series-tabs">
+                <button class="active" data-metric="cpu" type="button">CPU</button>
+                <button data-metric="memory" type="button">内存</button>
+                <button data-metric="disk" type="button">磁盘</button>
+              </div>
+            </div>
+            <div class="chart" id="series-chart"></div>
+          </section>
+
+          <section class="panel">
+            <div class="panel-head">
+              <div>
+                <p class="eyebrow">事件中心</p>
+                <h2>最近处理记录</h2>
+              </div>
+              <button class="btn secondary nav-shortcut" data-view="events" type="button">记录事件</button>
+            </div>
+            <div class="timeline" id="recent-events"></div>
+          </section>
+        </div>
+      </section>
+
+      <section class="view" id="view-prometheus">
+        <div class="panel">
+          <div class="panel-head">
+            <div>
+              <p class="eyebrow">Prometheus 信息监控</p>
+              <h2>采集目标状态</h2>
+            </div>
+            <span class="badge" id="prometheus-url">--</span>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Job</th><th>Instance</th><th>状态</th><th>最后采集</th><th>错误</th></tr>
+              </thead>
+              <tbody id="targets-table"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section class="view" id="view-hosts">
+        <div class="layout-2">
+          <section class="panel">
+            <div class="panel-head">
+              <div>
+                <p class="eyebrow">主机预警</p>
+                <h2>当前告警</h2>
+              </div>
+            </div>
+            <div class="alert-list" id="alert-list"></div>
+          </section>
+
+          <section class="panel">
+            <div class="panel-head">
+              <div>
+                <p class="eyebrow">Load Average</p>
+                <h2>主机负载</h2>
+              </div>
+            </div>
+            <div class="load-list" id="load-list"></div>
+          </section>
+        </div>
+      </section>
+
+      <section class="view" id="view-containers">
+        <div class="layout-2">
+          <section class="panel">
+            <div class="panel-head">
+              <div>
+                <p class="eyebrow">Docker 容器</p>
+                <h2>CPU Top 8</h2>
+              </div>
+            </div>
+            <div class="rank-list" id="container-cpu"></div>
+          </section>
+          <section class="panel">
+            <div class="panel-head">
+              <div>
+                <p class="eyebrow">Docker 容器</p>
+                <h2>内存 Top 8</h2>
+              </div>
+            </div>
+            <div class="rank-list" id="container-memory"></div>
+          </section>
+        </div>
+      </section>
+
+      <section class="view" id="view-events">
+        <div class="layout-events">
+          <section class="panel">
+            <div class="panel-head">
+              <div>
+                <p class="eyebrow">事件中心</p>
+                <h2>处理记录</h2>
+              </div>
+            </div>
+            <div class="timeline full" id="events-list"></div>
+          </section>
+
+          <form class="panel event-form" id="event-form">
+            <div class="panel-head">
+              <div>
+                <p class="eyebrow">新增事件</p>
+                <h2>记录处理动作</h2>
+              </div>
+            </div>
+            <label>级别
+              <select name="level">
+                <option value="info">信息</option>
+                <option value="success">完成</option>
+                <option value="warning">预警</option>
+                <option value="critical">严重</option>
+              </select>
+            </label>
+            <label>来源
+              <input name="source" value="manual" />
+            </label>
+            <label>处理人
+              <input name="handler" value="SRE" />
+            </label>
+            <label>内容
+              <textarea name="message" rows="5" placeholder="例如：已处理 node-exporter 采集异常，恢复主机监控。"></textarea>
+            </label>
+            <button class="btn primary" type="submit">写入事件中心</button>
+          </form>
+        </div>
+      </section>
+    </main>
+
+    <div class="toast" id="toast"></div>
+    <script src="./app.js"></script>
+  </body>
+</html>

@@ -1,0 +1,41 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+*.egg
+.venv/
+venv/
+
+# Node (legacy)
+node_modules/
+.next/
+out/
+
+# Prometheus data
+prometheus-data/
+prometheus/data/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Config (keep templates, ignore user data)
+activity.json
+websites.json
+
+# Backups (keep for reference on GitHub)
+# backups/
+
+# Environment
+.env.local
+.env.production
+
+# Logs
+*.log

@@ -1,0 +1,1147 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hermes 运维面板</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+<style>
+/* ── Reset & Variables ── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f5f5f7;
+  --sidebar-bg:rgba(255,255,255,0.72);
+  --sidebar-border:rgba(0,0,0,0.06);
+  --card-bg:rgba(255,255,255,0.82);
+  --card-border:rgba(0,0,0,0.04);
+  --text:#1d1d1f;
+  --text-secondary:#6e6e73;
+  --text-tertiary:#86868b;
+  --accent:#0071e3;
+  --accent-hover:#0077ed;
+  --accent-soft:rgba(0,113,227,0.08);
+  --green:#30d158;
+  --red:#ff453a;
+  --orange:#ff9f0a;
+  --blue:#0a84ff;
+  --shadow-sm:0 1px 3px rgba(0,0,0,0.04);
+  --shadow-md:0 4px 14px rgba(0,0,0,0.06);
+  --shadow-lg:0 8px 30px rgba(0,0,0,0.08);
+  --radius-sm:8px;
+  --radius-md:12px;
+  --radius-lg:16px;
+  --radius-xl:20px;
+  --transition:all 0.25s cubic-bezier(0.25,0.1,0.25,1);
+  --sidebar-w:240px;
+  --topbar-h:56px;
+  --font:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text","Helvetica Neue",Arial,sans-serif;
+  --mono:"SF Mono","SFMono-Regular","JetBrains Mono",Menlo,monospace;
+}
+[data-theme="dark"]{
+  --bg:#1c1c1e;
+  --sidebar-bg:rgba(44,44,46,0.85);
+  --sidebar-border:rgba(255,255,255,0.06);
+  --card-bg:rgba(44,44,46,0.75);
+  --card-border:rgba(255,255,255,0.05);
+  --text:#f5f5f7;
+  --text-secondary:#a1a1a6;
+  --text-tertiary:#6e6e73;
+  --accent:#0a84ff;
+  --accent-hover:#409cff;
+  --accent-soft:rgba(10,132,255,0.12);
+  --shadow-sm:0 1px 3px rgba(0,0,0,0.2);
+  --shadow-md:0 4px 14px rgba(0,0,0,0.3);
+  --shadow-lg:0 8px 30px rgba(0,0,0,0.35);
+}
+html{font-size:15px}
+body{
+  font-family:var(--font);
+  background:var(--bg);
+  color:var(--text);
+  height:100vh;
+  overflow:hidden;
+  display:flex;
+  -webkit-font-smoothing:antialiased;
+}
+::-webkit-scrollbar{width:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:rgba(0,0,0,0.12);border-radius:10px}
+[data-theme="dark"] ::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.12)}
+
+/* ── Sidebar ── */
+.sidebar{
+  width:var(--sidebar-w);height:100vh;
+  background:var(--sidebar-bg);
+  backdrop-filter:blur(40px) saturate(1.4);
+  -webkit-backdrop-filter:blur(40px) saturate(1.4);
+  border-right:1px solid var(--sidebar-border);
+  display:flex;flex-direction:column;flex-shrink:0;z-index:10;user-select:none;
+}
+.sidebar-brand{
+  padding:20px 20px 16px;display:flex;align-items:center;gap:10px;
+  border-bottom:1px solid var(--sidebar-border);
+}
+.sidebar-brand .logo{
+  width:32px;height:32px;
+  background:linear-gradient(135deg,#0071e3,#40a9ff);
+  border-radius:8px;display:flex;align-items:center;justify-content:center;
+  color:#fff;font-size:17px;font-weight:700;flex-shrink:0;
+}
+.sidebar-brand h1{font-size:16px;font-weight:600;letter-spacing:-0.01em}
+.sidebar-brand .badge{
+  font-size:10px;font-weight:500;background:var(--accent-soft);color:var(--accent);
+  padding:1px 7px;border-radius:20px;margin-left:auto;
+}
+.sidebar-nav{flex:1;padding:10px;overflow-y:auto}
+.nav-section{
+  font-size:11px;font-weight:600;text-transform:uppercase;
+  letter-spacing:0.05em;color:var(--text-tertiary);padding:14px 14px 6px;
+}
+.nav-item{
+  display:flex;align-items:center;gap:10px;padding:9px 14px;
+  border-radius:var(--radius-sm);cursor:pointer;
+  font-size:13.5px;font-weight:500;color:var(--text-secondary);
+  transition:var(--transition);text-decoration:none;
+}
+.nav-item i{width:20px;text-align:center;font-size:15px;flex-shrink:0}
+.nav-item:hover{background:var(--accent-soft);color:var(--text)}
+.nav-item.active{background:linear-gradient(135deg,rgba(0,113,227,0.12),rgba(0,113,227,0.06));color:var(--accent);font-weight:600}
+.nav-item .nav-badge{margin-left:auto;font-size:11px;font-weight:500;background:var(--accent-soft);color:var(--accent);padding:1px 7px;border-radius:20px}
+.nav-item .nav-dot{width:7px;height:7px;border-radius:50%;margin-left:auto;flex-shrink:0}
+.nav-item .nav-dot.green{background:var(--green)}
+.nav-item .nav-dot.red{background:var(--red)}
+.sidebar-footer{
+  padding:12px 14px;border-top:1px solid var(--sidebar-border);
+  display:flex;align-items:center;gap:10px;font-size:12px;color:var(--text-secondary);
+}
+.sidebar-footer .srv-avatar{
+  width:28px;height:28px;border-radius:6px;
+  background:linear-gradient(135deg,#34c759,#30d158);
+  display:flex;align-items:center;justify-content:center;
+  color:#fff;font-size:12px;font-weight:600;flex-shrink:0;
+}
+.sidebar-footer .srv-info{flex:1;min-width:0}
+.sidebar-footer .srv-name{font-weight:600;color:var(--text);font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sidebar-footer .srv-st{display:flex;align-items:center;gap:4px;font-size:11px;color:var(--green)}
+.sidebar-footer .srv-st::before{content:'';width:5px;height:5px;border-radius:50%;background:var(--green);display:inline-block}
+
+/* ── Main ── */
+.main{flex:1;display:flex;flex-direction:column;height:100vh;overflow:hidden;min-width:0}
+
+/* ── Top Bar ── */
+.topbar{
+  height:var(--topbar-h);display:flex;align-items:center;
+  padding:0 24px;gap:12px;flex-shrink:0;
+  border-bottom:1px solid var(--sidebar-border);
+}
+.topbar .page-title{font-size:20px;font-weight:600;letter-spacing:-0.02em}
+.topbar .page-subtitle{font-size:13px;color:var(--text-secondary);margin-left:8px}
+.topbar-spacer{flex:1}
+.topbar-action{
+  width:34px;height:34px;border-radius:50%;border:none;background:transparent;
+  color:var(--text-secondary);cursor:pointer;display:flex;
+  align-items:center;justify-content:center;font-size:16px;position:relative;transition:var(--transition);
+}
+.topbar-action:hover{background:var(--accent-soft);color:var(--text)}
+.topbar-action .notif-dot{position:absolute;top:6px;right:7px;width:7px;height:7px;border-radius:50%;background:var(--red)}
+.topbar-user{
+  display:flex;align-items:center;gap:8px;
+  padding:4px 10px 4px 4px;border-radius:20px;cursor:pointer;transition:var(--transition);
+}
+.topbar-user:hover{background:var(--accent-soft)}
+.topbar-user .avatar{
+  width:28px;height:28px;border-radius:50%;
+  background:linear-gradient(135deg,#0071e3,#40a9ff);
+  display:flex;align-items:center;justify-content:center;
+  color:#fff;font-size:12px;font-weight:600;
+}
+.topbar-user .name{font-size:13px;font-weight:500}
+
+/* ── Content ── */
+.content{flex:1;overflow-y:auto;padding:24px}
+.page{display:none;animation:fadeIn 0.3s ease}
+.page.active{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── Dashboard Stats ── */
+.stats-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(175px,1fr));gap:12px;margin-bottom:20px}
+.stat-card{
+  background:var(--card-bg);backdrop-filter:blur(20px) saturate(1.3);
+  border:1px solid var(--card-border);border-radius:var(--radius-lg);
+  padding:18px 20px;box-shadow:var(--shadow-sm);transition:var(--transition);cursor:default;
+}
+.stat-card:hover{box-shadow:var(--shadow-md);transform:translateY(-1px)}
+.stat-card .stat-icon{
+  width:36px;height:36px;border-radius:10px;display:flex;
+  align-items:center;justify-content:center;font-size:16px;color:#fff;margin-bottom:12px;
+}
+.stat-card .stat-label{font-size:12.5px;font-weight:500;color:var(--text-secondary);margin-bottom:4px}
+.stat-card .stat-value{font-size:26px;font-weight:700;letter-spacing:-0.03em}
+.stat-card .stat-change{font-size:11.5px;margin-top:4px;display:flex;align-items:center;gap:3px}
+.stat-card .stat-change.up{color:var(--green)}
+.stat-card .stat-change.down{color:var(--red)}
+
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:20px}
+@media(max-width:1100px){.grid-2,.grid-3{grid-template-columns:1fr}}
+
+.card{
+  background:var(--card-bg);backdrop-filter:blur(20px) saturate(1.3);
+  border:1px solid var(--card-border);border-radius:var(--radius-lg);box-shadow:var(--shadow-sm);overflow:hidden;
+}
+.card-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:16px 20px;border-bottom:1px solid var(--card-border);
+}
+.card-header h3{font-size:14px;font-weight:600}
+.card-header .card-action{font-size:12px;color:var(--accent);cursor:pointer;font-weight:500;transition:var(--transition)}
+.card-header .card-action:hover{opacity:0.8}
+.card-body{padding:16px 20px}
+.card-body.chart-body{padding:0 12px 8px}
+.card-body.no-pad{padding:0}
+
+.progress-item{margin-bottom:14px}
+.progress-item:last-child{margin-bottom:0}
+.progress-label{display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:4px}
+.progress-label span:first-child{color:var(--text-secondary)}
+.progress-label span:last-child{font-weight:600}
+.progress-track{height:5px;background:rgba(128,128,128,0.12);border-radius:10px;overflow:hidden}
+[data-theme="dark"] .progress-track{background:rgba(255,255,255,0.08)}
+.progress-bar{height:100%;border-radius:10px;transition:width 0.8s cubic-bezier(0.25,0.1,0.25,1)}
+.progress-bar.blue{background:linear-gradient(90deg,#0071e3,#40a9ff)}
+.progress-bar.green{background:linear-gradient(90deg,#34c759,#30d158)}
+.progress-bar.orange{background:linear-gradient(90deg,#ff9f0a,#ffcc02)}
+.progress-bar.red{background:linear-gradient(90deg,#ff453a,#ff6b6b)}
+
+.activity-list{list-style:none}
+.activity-item{
+  display:flex;align-items:flex-start;gap:12px;padding:10px 20px;
+  border-bottom:1px solid var(--card-border);font-size:13px;transition:var(--transition);
+}
+.activity-item:last-child{border-bottom:none}
+.activity-item:hover{background:var(--accent-soft)}
+.activity-item .act-icon{
+  width:28px;height:28px;border-radius:7px;display:flex;align-items:center;
+  justify-content:center;font-size:12px;flex-shrink:0;margin-top:1px;
+}
+.activity-item .act-content{flex:1;min-width:0}
+.activity-item .act-text{color:var(--text)}
+.activity-item .act-time{font-size:11px;color:var(--text-tertiary);margin-top:1px}
+
+.quick-actions{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px}
+.quick-btn{
+  display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px 8px;
+  border:1px solid var(--card-border);border-radius:var(--radius-md);background:transparent;
+  cursor:pointer;color:var(--text-secondary);font-size:11px;font-weight:500;
+  transition:var(--transition);font-family:var(--font);
+}
+.quick-btn:hover{background:var(--accent-soft);color:var(--accent);border-color:rgba(0,113,227,0.2)}
+.quick-btn i{font-size:18px;color:var(--text-secondary)}
+.quick-btn:hover i{color:var(--accent)}
+
+.data-table{width:100%;border-collapse:collapse}
+.data-table th{
+  text-align:left;font-size:11.5px;font-weight:600;
+  text-transform:uppercase;letter-spacing:0.04em;
+  color:var(--text-tertiary);padding:10px 16px;
+  border-bottom:1px solid var(--card-border);
+}
+.data-table td{padding:10px 16px;font-size:13px;border-bottom:1px solid var(--card-border)}
+.data-table tr:last-child td{border-bottom:none}
+.data-table tr:hover td{background:var(--accent-soft)}
+.status-tag{
+  display:inline-flex;align-items:center;gap:4px;
+  font-size:11.5px;font-weight:500;padding:2px 10px;border-radius:20px;
+}
+.status-tag.running{background:rgba(48,209,88,0.12);color:var(--green)}
+.status-tag.stopped{background:rgba(255,69,58,0.12);color:var(--red)}
+.status-tag.info{background:var(--accent-soft);color:var(--accent)}
+
+.btn{
+  display:inline-flex;align-items:center;gap:6px;padding:7px 16px;border-radius:20px;
+  border:none;font-size:12.5px;font-weight:500;cursor:pointer;transition:var(--transition);
+  font-family:var(--font);text-decoration:none;
+}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-primary:hover{background:var(--accent-hover);transform:translateY(-1px)}
+.btn-ghost{background:transparent;color:var(--text-secondary);border:1px solid var(--card-border)}
+.btn-ghost:hover{background:var(--accent-soft);color:var(--text)}
+.btn-danger{background:var(--red);color:#fff}
+.btn-danger:hover{opacity:0.85;transform:translateY(-1px)}
+.btn-sm{padding:4px 12px;font-size:11.5px}
+.btn-group{display:flex;gap:6px}
+
+.sys-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:1px}
+.sys-item{display:flex;flex-direction:column;padding:14px 20px;gap:2px}
+.sys-item:nth-child(odd){border-right:1px solid var(--card-border)}
+.sys-item:nth-child(-n+4){border-bottom:1px solid var(--card-border)}
+.sys-item .sys-label{font-size:11.5px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.04em;font-weight:500}
+.sys-item .sys-value{font-size:14px;font-weight:500;font-family:var(--mono)}
+
+.container-list{list-style:none}
+.container-item{
+  display:flex;align-items:center;gap:12px;padding:12px 20px;
+  border-bottom:1px solid var(--card-border);font-size:13px;transition:var(--transition);
+}
+.container-item:last-child{border-bottom:none}
+.container-item:hover{background:var(--accent-soft)}
+.container-item .ct-icon{
+  width:32px;height:32px;border-radius:8px;
+  background:var(--accent-soft);color:var(--accent);
+  display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;
+}
+.container-item .ct-info{flex:1;min-width:0}
+.container-item .ct-name{font-weight:600;font-size:13px}
+.container-item .ct-img{font-size:11px;color:var(--text-tertiary);margin-top:1px}
+.container-item .ct-actions{display:flex;gap:4px;flex-shrink:0}
+.container-item .ct-status{font-size:11px;font-weight:500;display:flex;align-items:center;gap:4px}
+.container-item .ct-status.running{color:var(--green)}
+.container-item .ct-status.exited{color:var(--red)}
+.container-item .ct-status::before{content:'';width:6px;height:6px;border-radius:50%;display:inline-block}
+.container-item .ct-status.running::before{background:var(--green)}
+.container-item .ct-status.exited::before{background:var(--red)}
+
+.setting-group{margin-bottom:20px}
+.setting-group h4{font-size:13px;font-weight:600;margin-bottom:8px;padding:0 4px}
+.setting-row{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-radius:var(--radius-md);transition:var(--transition)}
+.setting-row:hover{background:var(--accent-soft)}
+.setting-row .setting-label{font-size:13px;font-weight:500}
+.setting-row .setting-desc{font-size:11.5px;color:var(--text-tertiary);margin-top:1px}
+.toggle{
+  width:42px;height:24px;border-radius:12px;background:rgba(128,128,128,0.2);
+  position:relative;cursor:pointer;transition:var(--transition);flex-shrink:0;
+}
+.toggle.on{background:var(--green)}
+.toggle::after{content:'';position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,0.15);transition:var(--transition)}
+.toggle.on::after{left:20px}
+
+.empty-state{text-align:center;padding:40px 20px;color:var(--text-tertiary)}
+.empty-state i{font-size:36px;margin-bottom:12px;opacity:0.4}
+.empty-state p{font-size:13px;margin-bottom:8px}
+.empty-state .sub{font-size:12px;opacity:0.7}
+
+/* ── Modal ── */
+.modal-overlay{
+  display:none;position:fixed;inset:0;background:rgba(0,0,0,0.3);
+  backdrop-filter:blur(4px);z-index:200;align-items:center;justify-content:center;
+}
+.modal-overlay.show{display:flex}
+.modal{
+  background:var(--card-bg);border-radius:var(--radius-xl);padding:24px;
+  width:440px;max-width:90vw;box-shadow:var(--shadow-lg);
+  backdrop-filter:blur(40px);
+}
+.modal h3{font-size:17px;font-weight:600;margin-bottom:16px}
+.modal label{display:block;font-size:13px;font-weight:500;margin-bottom:4px;color:var(--text-secondary)}
+.modal input,.modal select{
+  width:100%;padding:8px 12px;border:1px solid var(--card-border);border-radius:var(--radius-sm);
+  font-size:13px;background:var(--bg);color:var(--text);font-family:var(--font);margin-bottom:12px;
+}
+.modal input:focus,.modal select:focus{outline:none;border-color:var(--accent)}
+.modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:8px}
+
+/* ── Toast ── */
+.toast{
+  position:fixed;bottom:24px;right:24px;z-index:300;
+  background:var(--card-bg);backdrop-filter:blur(20px);
+  border:1px solid var(--card-border);border-radius:var(--radius-md);
+  padding:12px 18px;box-shadow:var(--shadow-lg);
+  display:none;align-items:center;gap:10px;font-size:13px;font-weight:500;
+  animation:slideUp 0.3s ease;
+}
+.toast.show{display:flex}
+.toast i{font-size:16px}
+.toast.success i{color:var(--green)}
+.toast.error i{color:var(--red)}
+@keyframes slideUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── Terminal ── */
+#terminal-output{font-family:var(--mono);font-size:13px;line-height:1.6;min-height:340px;max-height:calc(100vh - 280px);overflow-y:auto}
+.terminal-prompt{color:var(--green)}
+.terminal-cursor{animation:blink 1s step-end infinite}
+@keyframes blink{50%{opacity:0}}
+.terminal-input-line{display:flex;align-items:center;gap:0}
+.terminal-input-line .prompt{color:var(--green);white-space:pre;flex-shrink:0}
+.terminal-input-line input{
+  flex:1;background:transparent;border:none;color:#f5f5f7;font-family:var(--mono);
+  font-size:13px;outline:none;caret-color:var(--green);
+}
+
+/* ── Loading ── */
+.loading-dots::after{content:'';animation:dots 1.5s steps(4,end) infinite}
+@keyframes dots{0%{content:''}25%{content:'.'}50%{content:'..'}75%{content:'...'}100%{content:''}}
+
+@media(max-width:768px){
+  .sidebar{position:fixed;left:-260px;transition:var(--transition);z-index:100}
+  .sidebar.open{left:0}
+  .sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.3);z-index:99}
+  .sidebar-overlay.show{display:block}
+  .content{padding:16px}
+  .stats-row{grid-template-columns:repeat(2,1fr)}
+}
+</style>
+</head>
+<body>
+
+<!-- Toast -->
+<div class="toast" id="toast"><i class="fas fa-check-circle"></i> <span id="toast-msg"></span></div>
+
+<!-- Modal -->
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal">
+    <h3 id="modal-title">添加网站</h3>
+    <div id="modal-body"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal()">取消</button>
+      <button class="btn btn-primary" id="modal-confirm">确认</button>
+    </div>
+  </div>
+</div>
+
+<!-- Sidebar -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-brand">
+    <div class="logo">H</div>
+    <h1>Hermes Panel</h1>
+    <span class="badge">v1.0</span>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-section">概览</div>
+    <a class="nav-item active" data-page="dashboard" href="#"><i class="fas fa-gauge-high"></i> 仪表盘</a>
+    <a class="nav-item" data-page="websites" href="#"><i class="fas fa-globe"></i> 网站 <span class="nav-badge" id="site-count">0</span></a>
+    <a class="nav-item" data-page="database" href="#"><i class="fas fa-database"></i> 数据库</a>
+    <div class="nav-section">运行时</div>
+    <a class="nav-item" data-page="docker" href="#"><i class="fab fa-docker"></i> Docker <span class="nav-dot" id="docker-dot"></span></a>
+    <a class="nav-item" data-page="processes" href="#"><i class="fas fa-microchip"></i> 进程管理</a>
+    <a class="nav-item" data-page="terminal" href="#"><i class="fas fa-terminal"></i> 终端</a>
+    <div class="nav-section">安全</div>
+    <a class="nav-item" data-page="firewall" href="#"><i class="fas fa-shield-halved"></i> 防火墙</a>
+    <a class="nav-item" data-page="ssl" href="#"><i class="fas fa-lock"></i> SSL 证书</a>
+    <div class="nav-section">系统</div>
+    <a class="nav-item" data-page="system" href="#"><i class="fas fa-server"></i> 系统信息</a>
+    <a class="nav-item" data-page="settings" href="#"><i class="fas fa-gear"></i> 设置</a>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="srv-avatar">S</div>
+    <div class="srv-info">
+      <div class="srv-name" id="srv-name">加载中…</div>
+      <div class="srv-st" id="srv-st">运行中</div>
+    </div>
+    <i class="fas fa-ellipsis" style="cursor:pointer;opacity:0.5;font-size:14px"></i>
+  </div>
+</aside>
+
+<div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+<div class="main">
+  <header class="topbar">
+    <button class="topbar-action" id="menu-toggle" style="display:none"><i class="fas fa-bars"></i></button>
+    <span class="page-title" id="page-title">仪表盘</span>
+    <span class="page-subtitle" id="page-subtitle">服务器运行状态概览</span>
+    <div class="topbar-spacer"></div>
+    <button class="topbar-action" title="刷新所有数据" onclick="refreshAll()"><i class="fas fa-rotate"></i></button>
+    <button class="topbar-action" title="通知"><i class="fas fa-bell"></i><span class="notif-dot"></span></button>
+    <div class="topbar-user">
+      <div class="avatar">Q</div>
+      <span class="name">Qing-Shan</span>
+    </div>
+  </header>
+
+  <div class="content">
+    <!-- ═════ Dashboard ═════ -->
+    <div class="page active" id="page-dashboard">
+      <div class="stats-row" id="stats-row">
+        <div class="stat-card"><div class="stat-icon" style="background:linear-gradient(135deg,#0071e3,#40a9ff)"><i class="fas fa-microchip"></i></div><div class="stat-label">CPU 使用率</div><div class="stat-value" id="stat-cpu">—</div><div class="stat-change up"><i class="fas fa-arrow-up"></i> <span id="stat-cpu-change">0</span>%</div></div>
+        <div class="stat-card"><div class="stat-icon" style="background:linear-gradient(135deg,#34c759,#30d158)"><i class="fas fa-memory"></i></div><div class="stat-label">内存</div><div class="stat-value" id="stat-ram">—</div><div class="stat-change"><span id="stat-ram-used">0</span> / <span id="stat-ram-total">0</span> GB</div></div>
+        <div class="stat-card"><div class="stat-icon" style="background:linear-gradient(135deg,#ff9f0a,#ffcc02)"><i class="fas fa-hard-drive"></i></div><div class="stat-label">磁盘</div><div class="stat-value" id="stat-disk">—</div><div class="stat-change"><span id="stat-disk-used">0</span> / <span id="stat-disk-total">0</span> GB</div></div>
+        <div class="stat-card"><div class="stat-icon" style="background:linear-gradient(135deg,#ff453a,#ff6b6b)"><i class="fas fa-wifi"></i></div><div class="stat-label">网络</div><div class="stat-value" id="stat-net">—</div><div class="stat-change">↓ <span id="stat-net-down">0</span> ↑ <span id="stat-net-up">0</span> Mbps</div></div>
+        <div class="stat-card"><div class="stat-icon" style="background:linear-gradient(135deg,#af52de,#bf5af2)"><i class="fas fa-clock"></i></div><div class="stat-label">运行时间</div><div class="stat-value" id="stat-uptime">—</div><div class="stat-change" style="color:var(--text-tertiary)">进程: <span id="stat-procs">0</span></div></div>
+      </div>
+      <div class="grid-2">
+        <div class="card"><div class="card-header"><h3><i class="fas fa-chart-area" style="color:var(--accent);margin-right:6px"></i> CPU 使用率趋势</h3><span class="card-action" id="cpu-status">实时</span></div><div class="card-body chart-body"><canvas id="cpuChart" height="180"></canvas></div></div>
+        <div class="card"><div class="card-header"><h3><i class="fas fa-chart-line" style="color:var(--green);margin-right:6px"></i> 网络流量</h3><span class="card-action">24h</span></div><div class="card-body chart-body"><canvas id="netChart" height="180"></canvas></div></div>
+      </div>
+      <div class="grid-2">
+        <div class="card"><div class="card-header"><h3><i class="fas fa-clock-rotate-left" style="color:var(--orange);margin-right:6px"></i> 最近活动</h3><span class="card-action">查看全部</span></div><div class="card-body no-pad"><ul class="activity-list" id="activity-list"></ul></div></div>
+        <div class="card"><div class="card-header"><h3><i class="fas fa-bolt" style="color:var(--orange);margin-right:6px"></i> 快速操作</h3></div><div class="card-body">
+          <div class="quick-actions">
+            <button class="quick-btn" onclick="doBackup()"><i class="fas fa-database"></i>备份数据</button>
+            <button class="quick-btn" onclick="doScan()"><i class="fas fa-shield"></i>扫描安全</button>
+            <button class="quick-btn" onclick="navigateTo('processes')"><i class="fas fa-microchip"></i>进程管理</button>
+            <button class="quick-btn" onclick="navigateTo('docker')"><i class="fab fa-docker"></i>容器管理</button>
+            <button class="quick-btn" onclick="navigateTo('terminal')"><i class="fas fa-terminal"></i>打开终端</button>
+            <button class="quick-btn" onclick="refreshAll()"><i class="fas fa-rotate"></i>刷新数据</button>
+          </div>
+        </div></div>
+      </div>
+    </div>
+
+    <!-- ═════ Websites ═════ -->
+    <div class="page" id="page-websites">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+        <h2 style="font-size:18px;font-weight:600">网站列表</h2>
+        <button class="btn btn-primary" onclick="showAddSiteModal()"><i class="fas fa-plus"></i> 添加网站</button>
+      </div>
+      <div class="card">
+        <table class="data-table">
+          <thead><tr><th>域名</th><th>状态</th><th>PHP 版本</th><th>根目录</th><th>SSL</th><th>操作</th></tr></thead>
+          <tbody id="websites-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ═════ Database ═════ -->
+    <div class="page" id="page-database">
+      <h2 style="font-size:18px;font-weight:600;margin-bottom:16px">数据库管理</h2>
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-header"><h3><i class="fas fa-database" style="color:var(--accent);margin-right:6px"></i> MySQL</h3><span class="status-tag running"><i class="fas fa-circle"></i> 运行中</span></div>
+          <div class="card-body">
+            <p style="font-size:13px;color:var(--text-secondary);margin-bottom:12px">数据库服务状态正常，端口 3306</p>
+            <div style="display:flex;gap:12px;font-size:12.5px"><span>连接数: <strong>12</strong></span><span>查询/秒: <strong>243</strong></span></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><h3><i class="fas fa-leaf" style="color:var(--green);margin-right:6px"></i> Redis</h3><span class="status-tag running"><i class="fas fa-circle"></i> 运行中</span></div>
+          <div class="card-body">
+            <div class="progress-item"><div class="progress-label"><span>内存使用</span><span id="redis-mem">—</span></div><div class="progress-track"><div class="progress-bar green" id="redis-bar" style="width:0%"></div></div></div>
+            <div style="display:flex;gap:16px;margin-top:12px;font-size:12.5px"><span>键: <strong id="redis-keys">—</strong></span><span>命中率: <strong id="redis-hit">—</strong></span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═════ Docker ═════ -->
+    <div class="page" id="page-docker">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+        <h2 style="font-size:18px;font-weight:600">Docker 容器</h2>
+        <button class="btn btn-ghost" onclick="loadDockerContainers()"><i class="fas fa-rotate"></i> 刷新</button>
+      </div>
+      <div class="card"><ul class="container-list" id="docker-list"></ul></div>
+    </div>
+
+    <!-- ═════ Processes ═════ -->
+    <div class="page" id="page-processes">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+        <h2 style="font-size:18px;font-weight:600">进程管理</h2>
+        <button class="btn btn-ghost" onclick="loadProcesses()"><i class="fas fa-rotate"></i> 刷新</button>
+      </div>
+      <div class="card">
+        <table class="data-table">
+          <thead><tr><th>PID</th><th>名称</th><th>CPU %</th><th>内存 %</th><th>内存 (MB)</th><th>状态</th><th>操作</th></tr></thead>
+          <tbody id="processes-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ═════ Terminal ═════ -->
+    <div class="page" id="page-terminal">
+      <h2 style="font-size:18px;font-weight:600;margin-bottom:16px">Web 终端</h2>
+      <div class="card" style="background:#1c1c1e;border-color:rgba(255,255,255,0.06)">
+        <div style="display:flex;align-items:center;gap:8px;padding:12px 16px;border-bottom:1px solid rgba(255,255,255,0.06)">
+          <span style="width:10px;height:10px;border-radius:50%;background:#ff453a"></span>
+          <span style="width:10px;height:10px;border-radius:50%;background:#ff9f0a"></span>
+          <span style="width:10px;height:10px;border-radius:50%;background:#30d158"></span>
+          <span style="color:rgba(255,255,255,0.4);font-size:12px;margin-left:8px" id="term-title">终端 — 已断开连接</span>
+          <div class="topbar-spacer"></div>
+          <button class="btn btn-ghost btn-sm" style="color:rgba(255,255,255,0.6)" onclick="connectTerminal()">重新连接</button>
+        </div>
+        <div id="terminal-output">
+          <div style="color:rgba(255,255,255,0.4);padding:16px 16px 0">点击「连接」或输入命令启动终端</div>
+        </div>
+        <div style="display:flex;align-items:center;border-top:1px solid rgba(255,255,255,0.06);padding:8px 12px">
+          <span style="color:var(--green);font-family:var(--mono);font-size:13px;flex-shrink:0">$</span>
+          <input type="text" id="term-input" style="flex:1;background:transparent;border:none;color:#f5f5f7;font-family:var(--mono);font-size:13px;padding:4px 8px;outline:none" placeholder="输入命令..." disabled>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═════ Firewall ═════ -->
+    <div class="page" id="page-firewall">
+      <h2 style="font-size:18px;font-weight:600;margin-bottom:16px">防火墙规则</h2>
+      <div class="card">
+        <table class="data-table">
+          <thead><tr><th>协议</th><th>端口</th><th>来源 IP</th><th>策略</th><th>说明</th></tr></thead>
+          <tbody id="firewall-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ═════ SSL ═════ -->
+    <div class="page" id="page-ssl">
+      <h2 style="font-size:18px;font-weight:600;margin-bottom:16px">SSL 证书</h2>
+      <div class="card">
+        <table class="data-table">
+          <thead><tr><th>域名</th><th>颁发者</th><th>到期时间</th><th>状态</th></tr></thead>
+          <tbody id="ssl-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ═════ System ═════ -->
+    <div class="page" id="page-system">
+      <h2 style="font-size:18px;font-weight:600;margin-bottom:16px">系统信息</h2>
+      <div class="grid-2">
+        <div class="card"><div class="card-header"><h3><i class="fas fa-server" style="color:var(--accent);margin-right:6px"></i> 硬件信息</h3></div><div class="card-body no-pad"><div class="sys-grid" id="sys-grid"></div></div></div>
+        <div class="card"><div class="card-header"><h3><i class="fas fa-chart-pie" style="color:var(--orange);margin-right:6px"></i> 资源使用详情</h3></div><div class="card-body"><div id="sys-progress"></div></div></div>
+      </div>
+    </div>
+
+    <!-- ═════ Settings ═════ -->
+    <div class="page" id="page-settings">
+      <h2 style="font-size:18px;font-weight:600;margin-bottom:16px">系统设置</h2>
+      <div class="card">
+        <div class="card-header"><h3>面板设置</h3></div>
+        <div class="card-body">
+          <div class="setting-group" id="settings-list"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = window.API_BASE || '';
+let cpuChart = null, netChart = null;
+let cpuHistory = [], netHistory = [], wsTerminal = null;
+
+// ── Toast ──
+function showToast(msg, type = 'success') {
+  const t = document.getElementById('toast');
+  t.className = 'toast show ' + type;
+  t.querySelector('i').className = type === 'success' ? 'fas fa-check-circle' : 'fas fa-exclamation-circle';
+  document.getElementById('toast-msg').textContent = msg;
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// ── Modal ──
+function showModal(title, bodyHtml) {
+  document.getElementById('modal-title').textContent = title;
+  document.getElementById('modal-body').innerHTML = bodyHtml;
+  document.getElementById('modal-overlay').classList.add('show');
+}
+function closeModal() { document.getElementById('modal-overlay').classList.remove('show'); }
+
+// ── Navigation ──
+const pageTitles = {
+  dashboard: ['仪表盘','服务器运行状态概览'],
+  websites: ['网站管理','Nginx 网站列表'],
+  database: ['数据库管理','MySQL & Redis'],
+  docker: ['Docker 容器','容器管理'],
+  processes: ['进程管理','系统进程监控'],
+  terminal: ['Web 终端','远程命令行'],
+  firewall: ['防火墙规则','安全策略管理'],
+  ssl: ['SSL 证书','HTTPS 证书管理'],
+  system: ['系统信息','硬件与资源详情'],
+  settings: ['系统设置','面板偏好配置'],
+};
+
+function navigateTo(page) {
+  const item = document.querySelector(`[data-page="${page}"]`);
+  if (item) item.click();
+}
+
+document.querySelectorAll('.nav-item').forEach(item => {
+  item.addEventListener('click', function(e) {
+    e.preventDefault();
+    const page = this.dataset.page;
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    this.classList.add('active');
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    const target = document.getElementById('page-' + page);
+    if (target) target.classList.add('active');
+    const t = pageTitles[page] || ['页面',''];
+    document.getElementById('page-title').textContent = t[0];
+    document.getElementById('page-subtitle').textContent = t[1];
+    document.getElementById('sidebar').classList.remove('open');
+    document.getElementById('sidebar-overlay').classList.remove('show');
+    // Load page data on demand
+    if (page === 'docker') loadDockerContainers();
+    if (page === 'processes') loadProcesses();
+    if (page === 'firewall') loadFirewall();
+    if (page === 'ssl') loadSSLCerts();
+    if (page === 'system') loadSystemInfo();
+    if (page === 'settings') loadSettings();
+    if (page === 'websites') loadWebsites();
+  });
+});
+
+// ── Mobile ──
+function checkMobile() {
+  const toggle = document.getElementById('menu-toggle');
+  if (window.innerWidth <= 768) {
+    toggle.style.display = 'flex';
+  } else {
+    toggle.style.display = 'none';
+    document.getElementById('sidebar').classList.remove('open');
+    document.getElementById('sidebar-overlay').classList.remove('show');
+  }
+}
+checkMobile();
+window.addEventListener('resize', checkMobile);
+document.getElementById('menu-toggle').addEventListener('click', () => {
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('sidebar-overlay').classList.toggle('show');
+});
+document.getElementById('sidebar-overlay').addEventListener('click', () => {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebar-overlay').classList.remove('show');
+});
+
+// ═══════════════════════════════════════════
+//  API Calls
+// ═══════════════════════════════════════════
+
+async function api(path, opts = {}) {
+  try {
+    const res = await fetch(API + path, {
+      headers: { 'Content-Type': 'application/json', ...opts.headers },
+      ...opts,
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return await res.json();
+  } catch (e) {
+    console.error(`API ${path}:`, e);
+    return null;
+  }
+}
+
+// ── Dashboard Stats ──
+async function loadStats() {
+  const data = await api('/api/stats');
+  if (!data) return;
+  document.getElementById('stat-cpu').textContent = data.cpu + '%';
+  document.getElementById('stat-cpu-change').textContent = Math.round(Math.random() * 5 + 1);
+  document.getElementById('stat-ram').textContent = data.ram.percent + '%';
+  document.getElementById('stat-ram-used').textContent = data.ram.used;
+  document.getElementById('stat-ram-total').textContent = data.ram.total;
+  document.getElementById('stat-disk').textContent = data.disk.percent + '%';
+  document.getElementById('stat-disk-used').textContent = data.disk.used;
+  document.getElementById('stat-disk-total').textContent = data.disk.total;
+  document.getElementById('stat-net').textContent = (data.net.down_mbps + data.net.up_mbps).toFixed(0) + ' Mbps';
+  document.getElementById('stat-net-down').textContent = data.net.down_mbps.toFixed(0);
+  document.getElementById('stat-net-up').textContent = data.net.up_mbps.toFixed(0);
+  document.getElementById('stat-uptime').textContent = data.uptime_days + ' 天';
+  document.getElementById('stat-procs').textContent = data.processes;
+  document.getElementById('srv-name').textContent = data.hostname;
+
+  // Update charts
+  const now = new Date();
+  const label = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
+  if (cpuHistory.length >= 30) cpuHistory.shift();
+  cpuHistory.push({ label, value: data.cpu });
+  if (cpuChart) {
+    cpuChart.data.labels = cpuHistory.map(d => d.label);
+    cpuChart.data.datasets[0].data = cpuHistory.map(d => d.value);
+    cpuChart.update('none');
+  }
+
+  if (netHistory.length >= 24) netHistory.shift();
+  netHistory.push({ label, down: data.net.down_mbps, up: data.net.up_mbps });
+  if (netChart) {
+    netChart.data.labels = netHistory.map(d => d.label);
+    netChart.data.datasets[0].data = netHistory.map(d => d.down);
+    netChart.data.datasets[1].data = netHistory.map(d => d.up);
+    netChart.update('none');
+  }
+}
+
+// ── Docker ──
+async function loadDockerContainers() {
+  const data = await api('/api/docker/containers');
+  if (!data) { document.getElementById('docker-list').innerHTML = '<div class="empty-state"><i class="fas fa-docker"></i><p>无法连接 Docker</p></div>'; return; }
+  const dot = document.getElementById('docker-dot');
+  const running = data.filter(c => c.status === 'running').length;
+  dot.className = 'nav-dot ' + (running > 0 ? 'green' : 'red');
+
+  const el = document.getElementById('docker-list');
+  el.innerHTML = data.map(c => `
+    <li class="container-item">
+      <div class="ct-icon"><i class="fab fa-docker"></i></div>
+      <div class="ct-info">
+        <div class="ct-name">${c.name}</div>
+        <div class="ct-img">${c.image} · ${c.ports}</div>
+      </div>
+      <div class="ct-status ${c.status}">${c.status === 'running' ? '运行中' : '已停止'}</div>
+      <div class="ct-actions">
+        ${c.status === 'running'
+          ? `<button class="btn btn-ghost btn-sm" onclick="dockerAction('${c.name}','stop')">停止</button>`
+          : `<button class="btn btn-primary btn-sm" onclick="dockerAction('${c.name}','start')">启动</button>`}
+        <button class="btn btn-ghost btn-sm" onclick="dockerAction('${c.name}','restart')">重启</button>
+      </div>
+    </li>
+  `).join('');
+}
+
+async function dockerAction(name, action) {
+  const result = await api(`/api/docker/${name}/${action}`, { method: 'POST' });
+  if (result && result.success) {
+    showToast(`Docker ${action} ${name} 成功`);
+    loadDockerContainers();
+  } else {
+    showToast(result?.message || '操作失败', 'error');
+  }
+}
+
+// ── Processes ──
+async function loadProcesses() {
+  const data = await api('/api/processes');
+  if (!data) return;
+  const tbody = document.getElementById('processes-tbody');
+  tbody.innerHTML = data.map(p => `
+    <tr>
+      <td>${p.pid}</td>
+      <td><strong>${p.name || '—'}</strong></td>
+      <td>${p.cpu_percent || 0}%</td>
+      <td>${p.memory_percent || 0}%</td>
+      <td>${p.memory_mb || 0}</td>
+      <td><span class="status-tag ${p.status === 'running' ? 'running' : 'info'}">${p.status}</span></td>
+      <td><button class="btn btn-danger btn-sm" onclick="killProcess(${p.pid})">终止</button></td>
+    </tr>
+  `).join('');
+}
+
+async function killProcess(pid) {
+  if (!confirm(`确认终止进程 PID ${pid}？`)) return;
+  const result = await api('/api/processes/kill', {
+    method: 'POST',
+    body: JSON.stringify({ pid }),
+  });
+  if (result?.success) {
+    showToast(`进程 ${pid} 已终止`);
+    loadProcesses();
+  } else {
+    showToast(result?.message || '终止失败', 'error');
+  }
+}
+
+// ── Websites ──
+async function loadWebsites() {
+  const data = await api('/api/websites');
+  if (!data) return;
+  document.getElementById('site-count').textContent = data.length;
+  const tbody = document.getElementById('websites-tbody');
+  tbody.innerHTML = data.map(s => `
+    <tr>
+      <td><strong>${s.domain}</strong></td>
+      <td><span class="status-tag ${s.status === 'running' ? 'running' : 'stopped'}"><i class="fas fa-circle"></i> ${s.status === 'running' ? '运行中' : '已停止'}</span></td>
+      <td>${s.php}</td>
+      <td style="font-family:var(--mono);font-size:12px">${s.root}</td>
+      <td>${s.ssl ? '<span class="status-tag running">已启用</span>' : '<span class="status-tag stopped">未配置</span>'}</td>
+      <td><button class="btn btn-ghost btn-sm" onclick="deleteSite('${s.domain}')">删除</button></td>
+    </tr>
+  `).join('');
+}
+
+function showAddSiteModal() {
+  showModal('添加网站', `
+    <label>域名</label>
+    <input id="site-domain" placeholder="example.com">
+    <label>PHP 版本</label>
+    <select id="site-php"><option>8.2</option><option>8.1</option><option>8.0</option><option>7.4</option></select>
+    <label>网站根目录</label>
+    <input id="site-root" placeholder="/www/wwwroot/" value="/www/wwwroot/">
+  `);
+  document.getElementById('modal-confirm').onclick = async () => {
+    const domain = document.getElementById('site-domain').value.trim();
+    if (!domain) return showToast('请输入域名', 'error');
+    const result = await api('/api/websites', {
+      method: 'POST',
+      body: JSON.stringify({ domain, php: document.getElementById('site-php').value, root: document.getElementById('site-root').value + domain }),
+    });
+    if (result?.success) { showToast(`网站 ${domain} 已添加`); closeModal(); loadWebsites(); }
+    else showToast('添加失败', 'error');
+  };
+}
+
+async function deleteSite(domain) {
+  if (!confirm(`确认删除网站 ${domain}？`)) return;
+  const result = await api(`/api/websites/${encodeURIComponent(domain)}`, { method: 'DELETE' });
+  if (result?.success) { showToast(`网站 ${domain} 已删除`); loadWebsites(); }
+}
+
+// ── Firewall ──
+async function loadFirewall() {
+  const data = await api('/api/firewall');
+  if (!data) return;
+  const tbody = document.getElementById('firewall-tbody');
+  tbody.innerHTML = data.map(r => `
+    <tr>
+      <td>${r.protocol}</td>
+      <td>${r.port}</td>
+      <td>${r.source}</td>
+      <td><span class="status-tag ${r.action === 'ALLOW' || r.action === 'ACCEPT' ? 'running' : 'stopped'}">${r.action}</span></td>
+      <td>${r.description}</td>
+    </tr>
+  `).join('');
+}
+
+// ── SSL ──
+async function loadSSLCerts() {
+  const data = await api('/api/ssl');
+  if (!data) return;
+  const tbody = document.getElementById('ssl-tbody');
+  tbody.innerHTML = data.map(c => `
+    <tr>
+      <td><strong>${c.domain}</strong></td>
+      <td>${c.issuer}</td>
+      <td>${c.expires}</td>
+      <td><span class="status-tag ${c.status === 'valid' ? 'running' : c.status === 'none' ? 'stopped' : 'info'}">${c.status === 'valid' ? '有效' : c.status === 'none' ? '未配置' : '已到期'}</span></td>
+    </tr>
+  `).join('');
+}
+
+// ── System Info ──
+async function loadSystemInfo() {
+  const data = await api('/api/system');
+  if (!data) return;
+  document.getElementById('sys-grid').innerHTML = `
+    <div class="sys-item"><span class="sys-label">操作系统</span><span class="sys-value">${data.os}</span></div>
+    <div class="sys-item"><span class="sys-label">内核版本</span><span class="sys-value">${data.kernel}</span></div>
+    <div class="sys-item"><span class="sys-label">CPU 型号</span><span class="sys-value">${data.cpu_model}</span></div>
+    <div class="sys-item"><span class="sys-label">CPU 核心</span><span class="sys-value">${data.cpu_cores} vCPU</span></div>
+    <div class="sys-item"><span class="sys-label">内存总量</span><span class="sys-value">${data.ram_total} GB</span></div>
+    <div class="sys-item"><span class="sys-label">磁盘总量</span><span class="sys-value">${data.disk_total} GB</span></div>
+  `;
+  document.getElementById('sys-progress').innerHTML = `
+    <div class="progress-item"><div class="progress-label"><span>CPU</span><span>${data.cpu}%</span></div><div class="progress-track"><div class="progress-bar blue" style="width:${data.cpu}%"></div></div></div>
+    <div class="progress-item"><div class="progress-label"><span>内存</span><span>${data.ram}%</span></div><div class="progress-track"><div class="progress-bar green" style="width:${data.ram}%"></div></div></div>
+    <div class="progress-item"><div class="progress-label"><span>磁盘</span><span>${data.disk}%</span></div><div class="progress-track"><div class="progress-bar orange" style="width:${data.disk}%"></div></div></div>
+  `;
+}
+
+// ── Settings ──
+async function loadSettings() {
+  const data = await api('/api/settings');
+  if (!data) return;
+  const items = [
+    { key: 'dark_mode', label: '深色模式', desc: '使用深色界面主题' },
+    { key: 'auto_update', label: '自动更新', desc: '自动检查并安装面板更新' },
+    { key: 'live_monitor', label: '实时监控', desc: '启用服务器资源实时监控' },
+    { key: 'notifications', label: '通知推送', desc: '异常时推送告警通知' },
+    { key: 'daily_backup', label: '每日备份', desc: '每天凌晨自动备份数据' },
+  ];
+  const el = document.getElementById('settings-list');
+  el.innerHTML = items.map(item => `
+    <div class="setting-row">
+      <div><div class="setting-label">${item.label}</div><div class="setting-desc">${item.desc}</div></div>
+      <div class="toggle ${data[item.key] ? 'on' : ''}" data-key="${item.key}"></div>
+    </div>
+  `).join('');
+
+  // Apply dark mode
+  if (data.dark_mode) {
+    document.documentElement.setAttribute('data-theme', 'dark');
+  }
+
+  // Toggle handlers
+  el.querySelectorAll('.toggle').forEach(t => {
+    t.addEventListener('click', async function() {
+      this.classList.toggle('on');
+      const key = this.dataset.key;
+      const val = this.classList.contains('on');
+      await api('/api/settings', {
+        method: 'PUT',
+        body: JSON.stringify({ [key]: val }),
+      });
+      if (key === 'dark_mode') {
+        document.documentElement.setAttribute('data-theme', val ? 'dark' : 'light');
+      }
+    });
+  });
+}
+
+// ── Activity ──
+async function loadActivity() {
+  const data = await api('/api/activity');
+  if (!data) return;
+  const el = document.getElementById('activity-list');
+  el.innerHTML = data.map(a => `
+    <li class="activity-item">
+      <div class="act-icon" style="background:rgba(0,113,227,0.08);color:${a.color || 'var(--accent)'}"><i class="fas ${a.icon || 'fa-circle'}"></i></div>
+      <div class="act-content"><div class="act-text">${a.text}</div><div class="act-time">${a.time}</div></div>
+    </li>
+  `).join('');
+}
+
+// ── Actions ──
+async function doBackup() {
+  showToast('正在备份…');
+  const result = await api('/api/backup', { method: 'POST' });
+  if (result?.success) showToast(`备份成功: ${result.file}`);
+  else showToast('备份失败', 'error');
+  loadActivity();
+}
+
+async function doScan() {
+  showToast('正在安全扫描…');
+  const result = await api('/api/scan', { method: 'POST' });
+  if (result?.success) {
+    if (result.safe) showToast('安全扫描完成，未发现威胁');
+    else showToast(`发现 ${result.issues.length} 个安全问题`, 'error');
+  } else showToast('扫描失败', 'error');
+  loadActivity();
+}
+
+function refreshAll() {
+  loadStats();
+  loadActivity();
+  loadWebsites();
+  loadDockerContainers();
+  showToast('数据已刷新');
+}
+
+// ── Terminal WebSocket ──
+function connectTerminal() {
+  const termTitle = document.getElementById('term-title');
+  const output = document.getElementById('terminal-output');
+  const input = document.getElementById('term-input');
+
+  if (wsTerminal) {
+    try { wsTerminal.close(); } catch(e) {}
+    wsTerminal = null;
+  }
+
+  const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+  const wsUrl = `${protocol}//${location.host}/ws/terminal`;
+
+  try {
+    wsTerminal = new WebSocket(wsUrl);
+
+    wsTerminal.onopen = () => {
+      termTitle.textContent = '终端 — 已连接';
+      input.disabled = false;
+      input.focus();
+      output.innerHTML = '<div style="color:rgba(255,255,255,0.4);padding:16px 16px 0">终端已连接，输入命令开始操作</div>';
+      // Send initial command to see shell
+      wsTerminal.send(JSON.stringify({ command: '' }));
+    };
+
+    wsTerminal.onmessage = (event) => {
+      const msg = JSON.parse(event.data);
+      if (msg.type === 'output') {
+        const div = document.createElement('div');
+        div.textContent = msg.data;
+        output.appendChild(div);
+        output.scrollTop = output.scrollHeight;
+      } else if (msg.type === 'error') {
+        const div = document.createElement('div');
+        div.style.color = '#ff453a';
+        div.textContent = 'Error: ' + msg.data;
+        output.appendChild(div);
+        output.scrollTop = output.scrollHeight;
+      }
+    };
+
+    wsTerminal.onclose = () => {
+      termTitle.textContent = '终端 — 已断开';
+      input.disabled = true;
+    };
+
+    wsTerminal.onerror = () => {
+      termTitle.textContent = '终端 — 连接失败';
+      input.disabled = true;
+    };
+  } catch(e) {
+    termTitle.textContent = '终端 — 连接失败';
+    input.disabled = true;
+  }
+}
+
+// Terminal input
+document.getElementById('term-input').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter' && this.value.trim()) {
+    const cmd = this.value;
+    if (wsTerminal && wsTerminal.readyState === WebSocket.OPEN) {
+      wsTerminal.send(JSON.stringify({ command: cmd }));
+    }
+    this.value = '';
+  }
+});
+
+// ── Charts ──
+function initCharts() {
+  const cpuCtx = document.getElementById('cpuChart').getContext('2d');
+  cpuChart = new Chart(cpuCtx, {
+    type: 'line',
+    data: {
+      labels: [],
+      datasets: [{
+        label: 'CPU %',
+        data: [],
+        borderColor: '#0071e3',
+        backgroundColor: ctx => {
+          const g = ctx.chart.ctx.createLinearGradient(0,0,0,160);
+          g.addColorStop(0, 'rgba(0,113,227,0.25)');
+          g.addColorStop(1, 'rgba(0,113,227,0.01)');
+          return g;
+        },
+        fill: true, tension: 0.35, pointRadius: 0, pointHitRadius: 8, borderWidth: 2,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: { backgroundColor: 'rgba(0,0,0,0.8)', cornerRadius: 8, padding: 10 } },
+      scales: {
+        x: { display: true, grid: { display: false, drawBorder: false }, ticks: { color: '#86868b', font: { size: 10 }, maxTicksLimit: 6 } },
+        y: { display: true, grid: { color: 'rgba(128,128,128,0.08)', drawBorder: false }, ticks: { color: '#86868b', font: { size: 10 }, maxTicksLimit: 5, callback: v => v + '%' }, min: 0, max: 100 },
+      },
+      animation: { duration: 400 },
+    },
+  });
+
+  const netCtx = document.getElementById('netChart').getContext('2d');
+  netChart = new Chart(netCtx, {
+    type: 'line',
+    data: {
+      labels: [],
+      datasets: [
+        { label: '下行', data: [], borderColor: '#0a84ff', backgroundColor: 'rgba(10,132,255,0.1)', fill: true, tension: 0.35, pointRadius: 0, borderWidth: 2 },
+        { label: '上行', data: [], borderColor: '#30d158', backgroundColor: 'rgba(48,209,88,0.08)', fill: true, tension: 0.35, pointRadius: 0, borderWidth: 2 },
+      ],
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: true, position: 'top', align: 'end', labels: { boxWidth: 8, padding: 12, usePointStyle: true, pointStyle: 'circle', font: { size: 11 }, color: '#86868b' } },
+        tooltip: { backgroundColor: 'rgba(0,0,0,0.8)', cornerRadius: 8, padding: 10 },
+      },
+      scales: {
+        x: { display: true, grid: { display: false, drawBorder: false }, ticks: { color: '#86868b', font: { size: 10 } } },
+        y: { display: true, grid: { color: 'rgba(128,128,128,0.08)', drawBorder: false }, ticks: { color: '#86868b', font: { size: 10 }, callback: v => v + ' Mbps' } },
+      },
+      animation: { duration: 400 },
+    },
+  });
+}
+
+// ── Init ──
+async function init() {
+  initCharts();
+  await loadStats();
+  await loadActivity();
+  await loadWebsites();
+  await loadDockerContainers();
+  // Auto-refresh dashboard stats every 4s
+  setInterval(loadStats, 4000);
+  // Auto-refresh activity every 15s
+  setInterval(loadActivity, 15000);
+  console.log('Hermes Panel initialized');
+}
+
+// Fix the quick-action terminal button
+document.querySelectorAll('.quick-btn').forEach(btn => {
+  btn.addEventListener('click', function() {
+    const text = this.textContent.trim();
+    if (text === '打开终端') navigateTo('terminal');
+    if (text === '容器管理') navigateTo('docker');
+    if (text === '进程管理') navigateTo('processes');
+  });
+});
+
+init();
+</script>
+</body>
+</html>
